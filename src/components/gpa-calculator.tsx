@@ -132,7 +132,7 @@ export default function GPACalculator() {
         courses: [],
       },
     ]);
-    setCurrentSemester((prevSemesters) => prevSemesters.length + 1);
+    setCurrentSemester(semesters.length + 1);
   };
 
   const downloadGPA = () => {
