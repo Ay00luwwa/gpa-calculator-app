@@ -16,6 +16,9 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "G.P.A/C.G.P.A Calculator",
   description: "Calculate your CGPA and GPA with ease",
+  icons: {
+    icon: "/ULSESA LOGO SVG.svg",
+  },
 };
 
 export default function RootLayout({
