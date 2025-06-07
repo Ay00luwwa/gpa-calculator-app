@@ -82,12 +82,27 @@ export default function GPACalculator() {
   const addCourse = () => {
     if (courseName && credits && grade) {
       setLevels((prevLevels) => {
-        const newLevels = [...prevLevels];
-        newLevels[currentLevel].semesters[currentSemester].courses.push({
-          id: Date.now(),
-          name: courseName,
-          credits: parseFloat(credits),
-          grade,
+        // Deep copy levels
+        const newLevels = prevLevels.map((level, lIdx) => {
+          if (lIdx !== currentLevel) return level;
+          // Deep copy semesters for the current level
+          const newSemesters = level.semesters.map((semester, sIdx) => {
+            if (sIdx !== currentSemester) return semester;
+            // Deep copy courses for the current semester
+            return {
+              ...semester,
+              courses: [
+                ...semester.courses,
+                {
+                  id: Date.now() + Math.random(),
+                  name: courseName,
+                  credits: parseFloat(credits),
+                  grade,
+                },
+              ],
+            };
+          });
+          return { ...level, semesters: newSemesters };
         });
         return newLevels;
       });
@@ -125,12 +140,18 @@ export default function GPACalculator() {
   };
 
   const calculateCGPA = () => {
-    const allSemesters = levels.flatMap((level) => level.semesters);
-    const semesterGPAs = allSemesters.map((semester) =>
-      calculateSemesterGPA(semester.courses)
-    );
-    const totalGPA = semesterGPAs.reduce((sum, gpa) => sum + gpa, 0);
-    return totalGPA / allSemesters.length;
+    // For each semester in all levels, calculate GPA if it has courses
+    const semesterGPAs = levels
+      .flatMap((level) =>
+        level.semesters.map((semester) => {
+          if (semester.courses.length === 0) return null;
+          return calculateSemesterGPA(semester.courses);
+        })
+      )
+      .filter((gpa) => gpa !== null);
+    if (semesterGPAs.length === 0) return 0;
+    const totalGPA = semesterGPAs.reduce((sum, gpa) => sum + (gpa as number), 0);
+    return totalGPA / semesterGPAs.length;
   };
 
   // Helper to check if any course exists
@@ -200,19 +221,17 @@ export default function GPACalculator() {
           </CardHeader>
           <CardContent>
             {/* Level Tabs */}
-            <div className="flex space-x-2 mb-4">
+            <div className="overflow-x-auto whitespace-nowrap flex gap-2 mb-4 pb-2 border-b">
               {LEVELS.map((level, idx) => (
                 <button
                   key={level}
-                  className={`px-4 py-2 rounded-t-md border-b-2 font-semibold focus:outline-none transition-colors ${
+                  className={`px-4 py-2 rounded-t-md font-semibold focus:outline-none transition-colors duration-200 ${
                     currentLevel === idx
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-muted-foreground hover:text-primary'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-accent'
                   }`}
-                  onClick={() => {
-                    setCurrentLevel(idx);
-                    setCurrentSemester(0); // reset to first semester when switching level
-                  }}
+                  onClick={() => setCurrentLevel(idx)}
+                  type="button"
                 >
                   {level}
                 </button>
@@ -304,19 +323,19 @@ export default function GPACalculator() {
                 ) : (
                   <p>No courses added yet.</p>
                 )}
-                <p className="mt-2">
+                <p className="text-lg font-semibold mt-2">
                   Semester GPA: {calculateSemesterGPA(levels[currentLevel].semesters[currentSemester].courses).toFixed(2)}
                 </p>
               </div>
             </div>
             {/* Overall GPA and CGPA */}
-            <div className="mt-8">
-              <h3 className="text-lg font-semibold">Overall GPA</h3>
-              <p className="text-3xl font-bold">
+            <div className="mt-2">
+              {/* <h3 className="text-lg font-semibold">Overall GPA</h3> */}
+              {/* <p className="text-3xl font-bold">
                 {calculateOverallGPA().toFixed(2)}
-              </p>
-              <h3 className="text-lg font-semibold mt-4">
-                Cumulative GPA (CGPA)
+              </p> */}
+              <h3 className="text-lg font-semibold mt-2">
+                Cumulative GPA (C.G.P.A)
               </h3>
               <p className="text-3xl font-bold">{calculateCGPA().toFixed(2)}</p>
               <Button onClick={downloadGPA} className="mt-4" variant="outline" disabled={!hasAnyCourse}>
